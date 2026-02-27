@@ -88,6 +88,10 @@ MonoBehaviour:
   decelSmoothTime: 0.02
   maxSpeedChange: 55
   walkDustDistance: 0.7
+  footstepSfxIds:
+  - Footstep1
+  footstepInterval: 0.2
+  minLocalSpeedForFootsteps: 0.35
   m_AntiGravityThreshold: 0.15
   m_NormalGravity: 2.2
   m_ReducedGravity: 4

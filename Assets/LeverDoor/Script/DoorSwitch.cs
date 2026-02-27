@@ -8,6 +8,9 @@ public class DoorSwitch : MonoBehaviour
     [SerializeField] private GameObject targeted_door;
     
     [SerializeField] private float toggleCooldown = 0.5f;
+    [SerializeField] private string[] leverSFX = { "Lever1", "Lever2" };
+    [SerializeField] private string[] doorSFX = { "door1", "door2", "door3", "door4", "door5" };
+
     private bool m_onCooldown;
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -25,6 +28,14 @@ public class DoorSwitch : MonoBehaviour
 
         // trigger lever anim
         m_switch_animator.SetTrigger("DoorToggle");
+
+        // lever sfx
+        string id = leverSFX[UnityEngine.Random.Range(0, leverSFX.Length)];
+        SfxManager.Instance.PlaySfx(id);
+
+        // door sfx
+        string id2 = doorSFX[UnityEngine.Random.Range(0, doorSFX.Length)];
+        SfxManager.Instance.PlaySfx(id2);
             
         // trigger door anim + collider
         targeted_door.GetComponent<Animator>().SetTrigger("DoorToggle");

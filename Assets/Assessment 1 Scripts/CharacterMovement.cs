@@ -26,6 +26,15 @@ public class CharacterMovement : MonoBehaviour
     [Header("VFX/SFX")]
     [SerializeField] private float walkDustDistance = 0.9f;
     private Vector3 lastDustSpawnPos = Vector3.zero;
+    
+    [Header("Footsteps")]
+    [SerializeField] private string[] footstepSfxIds = { "Footstep1"};
+    [SerializeField] private float footstepInterval = 0.18f;
+    [SerializeField] private float minLocalSpeedForFootsteps = 0.35f;
+
+    private Coroutine _footstepCo;
+    private WaitForSeconds _footstepWait;
+
 
     [Header("Apex / Gravity")]
     [SerializeField] private float m_AntiGravityThreshold = 0.15f;
@@ -87,10 +96,10 @@ public class CharacterMovement : MonoBehaviour
         yield return new WaitForFixedUpdate();
         _xSmoothVel = 0f;
 
-        // // Landing Sfx
-        // if (!SfxManager.Instance.IsSfxPlaying("Landing1")) {
-        //     SfxManager.Instance.PlaySfx("Landing1");
-        // }
+        // Landing Sfx
+        if (!SfxManager.Instance.IsSfxPlaying("Landing1")) {
+            SfxManager.Instance.PlaySfx("Landing1");
+        }
         
         // Landing Dust Vfx
         Vector3 dustPos = transform.position + new Vector3(0, 0.5f, 0);
@@ -174,6 +183,9 @@ public class CharacterMovement : MonoBehaviour
     {
         m_ActionMap = new PlayerControls();
         m_RB = GetComponent<Rigidbody2D>();
+        
+        _footstepWait = new WaitForSeconds(footstepInterval); // coroutine wait instruction [web:268]
+
     }
 
     private void FixedUpdate()
@@ -181,11 +193,9 @@ public class CharacterMovement : MonoBehaviour
         RefreshPlatformVelocity();
         ApplyHorizontalMovement(); // always run, so we can decelerate smoothly 
 
-        // // If player is idle, keep them moving with the platform instead of freezing X to 0.
-        // if (m_IsGrounded && Mathf.Approximately(m_InMove, 0f) && !m_LandingLockActive)
-        // {
-        //     m_RB.linearVelocityX = m_PlatformVelocity.x;
-        // }
+        if (ShouldPlayFootsteps()) StartFootsteps();
+        else StopFootsteps();
+
     }
 
     
@@ -329,6 +339,8 @@ public class CharacterMovement : MonoBehaviour
 
     public void Jump()
     {
+        StopFootsteps();
+
         m_RB.linearVelocityY = 0f;
         m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Impulse);
         m_CoyoteTimeCounter = 0;
@@ -338,8 +350,11 @@ public class CharacterMovement : MonoBehaviour
         VfxManager.Instance.PlayVFX("JumpDust", dustPos, Quaternion.identity, 1f);
                 
         // 1st Jump Sfx
-        //SfxManager.Instance.PlaySfx("Jump1");
-        
+        if (!SfxManager.Instance.IsSfxPlaying("Jump1"))
+        {
+            SfxManager.Instance.PlaySfx("Jump1");
+        }
+
         OnJumpStarted?.Invoke();
     }
 
@@ -491,4 +506,49 @@ public class CharacterMovement : MonoBehaviour
             lastDustSpawnPos = transform.position;
         }
     }
+    
+    private bool ShouldPlayFootsteps()
+    {
+        if (!m_IsGrounded) return false;
+        if (m_LandingLockActive) return false;
+        if (SfxManager.Instance == null) return false;
+        if (footstepSfxIds == null || footstepSfxIds.Length == 0) return false;
+
+        // LOCAL speed so platforms don't count as "walking"
+        float localX = m_RB.linearVelocity.x - m_PlatformVelocity.x;
+        return Mathf.Abs(localX) >= minLocalSpeedForFootsteps;
+    }
+
+    private void StartFootsteps()
+    {
+        if (_footstepCo != null) return;
+        _footstepCo = StartCoroutine(C_Footsteps());
+    }
+
+    private void StopFootsteps()
+    {
+        if (_footstepCo == null) return;
+        StopCoroutine(_footstepCo);
+        _footstepCo = null;
+    }
+
+    private IEnumerator C_Footsteps()
+    {
+        while (true)
+        {
+            if (!ShouldPlayFootsteps())
+            {
+                _footstepCo = null;
+                yield break;
+            }
+
+            // Random index: int overload is maxExclusive (good for arrays)
+            string id = footstepSfxIds[UnityEngine.Random.Range(0, footstepSfxIds.Length)];
+            SfxManager.Instance.PlaySfx(id);
+
+            yield return _footstepWait; // interval between steps
+        }
+    }
+
+
 }

@@ -60,7 +60,7 @@ public class SfxManager : MonoBehaviour
             AudioSource freeSource = GetAvailableSource();
             freeSource.clip   = clip;  // IMPORTANT: assign clip
             freeSource.volume = volumeOverride ?? found.volume * sfxVolumeScale;
-            freeSource.pitch = pitchOverride ?? Random.Range(0.95f, 1.05f); // Slight random pitch for variety
+            freeSource.pitch = pitchOverride ?? Random.Range(0.85f, 1.15f); // Slight random pitch for variety
             freeSource.PlayOneShot(clip);
         }
         else
