@@ -1,0 +1,86 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4048751135751130073
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8312857796259925636}
+  - component: {fileID: 8506516090709607243}
+  m_Layer: 0
+  m_Name: SFXManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8312857796259925636
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4048751135751130073}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 5.21325, y: -2.74431, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8506516090709607243
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4048751135751130073}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: caa082149bfa97840b0ab392fb0d9976, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sfxClips:
+  - id: Jump1
+    clip: {fileID: 8300000, guid: b9b20b730ee39fd48b2bd348fcff38c4, type: 3}
+    volume: 0.58
+  - id: Landing1
+    clip: {fileID: 8300000, guid: c952fdea0f47ee24c8b80619f4aed46a, type: 3}
+    volume: 0.1
+  - id: Play_Click
+    clip: {fileID: 8300000, guid: 71c276d1add139446bcc2a10fb304b23, type: 3}
+    volume: 0.85
+  - id: UI_Hover
+    clip: {fileID: 8300000, guid: 9c12f38165e56ae42aae783c1bd2d41a, type: 3}
+    volume: 0.4
+  - id: Footstep1
+    clip: {fileID: 8300000, guid: 10f51bd15ff967a4ea22dc2d8533e7cd, type: 3}
+    volume: 1.2
+  - id: Lever1
+    clip: {fileID: 8300000, guid: 9ee6e939109773b4390df0b81d40da98, type: 3}
+    volume: 1
+  - id: Lever2
+    clip: {fileID: 8300000, guid: 5e745e64b0171674995073c864587bb2, type: 3}
+    volume: 1
+  - id: door1
+    clip: {fileID: 8300000, guid: ea184445e4ad9744c8d1f0be70791e45, type: 3}
+    volume: 0.3
+  - id: door2
+    clip: {fileID: 8300000, guid: 49270ea93160a024189456e6cd9da70c, type: 3}
+    volume: 0.3
+  - id: door3
+    clip: {fileID: 8300000, guid: 5e33ecbce63165f4c9aec0eeec7ceca7, type: 3}
+    volume: 0.3
+  - id: door4
+    clip: {fileID: 8300000, guid: b0db08020e13d7a45bf05573f677475d, type: 3}
+    volume: 0.3
+  - id: door5
+    clip: {fileID: 8300000, guid: abe72d0fb7e00a64b91f106c5c173442, type: 3}
+    volume: 0.3
+  initialPoolSize: 10
+  audioSourcePrefab: {fileID: 5168005209534148950, guid: 1e8df1fe36dfde9448b3ebd7a2ad443f, type: 3}
+  sfxVolumeScale: 1
