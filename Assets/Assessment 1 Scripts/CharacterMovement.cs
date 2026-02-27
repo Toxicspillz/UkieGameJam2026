@@ -27,6 +27,8 @@ public class CharacterMovement : MonoBehaviour
 
     [Header("Ground Detection")]
     [SerializeField] private LayerMask m_GroundLayer;
+    private FloatingPlatform m_CurrentPlatform;
+    private Vector2 m_PlatformVelocity;
 
     private Rigidbody2D m_RB;
     private PlayerControls m_ActionMap;
@@ -153,6 +155,18 @@ public class CharacterMovement : MonoBehaviour
         m_RB = GetComponent<Rigidbody2D>();
     }
 
+    private void FixedUpdate()
+    {
+        RefreshPlatformVelocity();
+
+        // If player is idle, keep them moving with the platform instead of freezing X to 0.
+        if (m_IsGrounded && Mathf.Approximately(m_InMove, 0f) && !m_LandingLockActive)
+        {
+            m_RB.linearVelocityX = m_PlatformVelocity.x;
+        }
+    }
+
+    
     #region Bindings
     private void OnEnable()
     {
@@ -184,7 +198,6 @@ public class CharacterMovement : MonoBehaviour
     #endregion
 
     #region InputFunctions
-
     public void SetInMove(float direction)
     {
         m_InMove = direction;
@@ -309,7 +322,8 @@ public class CharacterMovement : MonoBehaviour
         {
             if ((ledgeCheck == 1 && m_InMove > 0) || (ledgeCheck == -1 && m_InMove < 0))
             {
-                m_RB.linearVelocityX = 0f;
+                RefreshPlatformVelocity();
+                m_RB.linearVelocityX = m_PlatformVelocity.x;
                 return;
             }
         }
@@ -317,18 +331,19 @@ public class CharacterMovement : MonoBehaviour
         if (m_LandingLockActive)
             return; // Ignore horizontal input during sticky feet lock
 
-        float targetSpeed = m_InMove * m_MoveSpeed;
-        float newVelX = Mathf.MoveTowards(m_RB.linearVelocity.x, targetSpeed, m_Acceleration * Time.fixedDeltaTime);
+        RefreshPlatformVelocity(); // from step 2B
 
-        if (Mathf.Approximately(m_InMove, 0))
-        {
-            newVelX = 0f;
-            m_RB.linearVelocity = new Vector2(newVelX, m_RB.linearVelocity.y);
-        }
-        else
-        {
-            m_RB.linearVelocityX = targetSpeed;
-        }
+        float targetSpeed = m_InMove * m_MoveSpeed;
+
+        // Add platform carry so "idle" means idle relative to platform
+        float worldTargetX = targetSpeed + m_PlatformVelocity.x;
+
+        // Use accel when input, decel when no input (optional but feels nicer)
+        float rate = Mathf.Approximately(m_InMove, 0f) ? m_Deceleration : m_Acceleration;
+
+        float newVelX = Mathf.MoveTowards(m_RB.linearVelocity.x, worldTargetX, rate * Time.fixedDeltaTime); // [web:95]
+        m_RB.linearVelocity = new Vector2(newVelX, m_RB.linearVelocity.y);
+
     }
 
     // Grace period after leaving ground for jump input
@@ -364,10 +379,11 @@ public class CharacterMovement : MonoBehaviour
     {
         m_IsGrounded = true;
 
+        RefreshCurrentPlatform();
+        RefreshPlatformVelocity();
+
         if (enableStickyFeet)
-        {
             StartCoroutine(C_StickyFeetLock());
-        }
 
         if (coyoteCoroutine != null)
         {
@@ -380,9 +396,30 @@ public class CharacterMovement : MonoBehaviour
     {
         m_IsGrounded = false;
 
+        m_CurrentPlatform = null;
+        m_PlatformVelocity = Vector2.zero;
+
         if (coyoteCoroutine == null)
-        {
             coyoteCoroutine = StartCoroutine(CoyoteTimeRoutine());
-        }
     }
+
+    
+    private void RefreshCurrentPlatform()
+    {
+        m_CurrentPlatform = null;
+
+        var groundCol = GroundCheck != null ? GroundCheck.GetCurrentSemiSolid() : null;
+        if (!groundCol) return;
+
+        // Works if the collider is on a child of the platform root.
+        m_CurrentPlatform = groundCol.GetComponentInParent<FloatingPlatform>();
+    }
+
+    private void RefreshPlatformVelocity()
+    {
+        m_PlatformVelocity = (m_IsGrounded && m_CurrentPlatform != null)
+            ? m_CurrentPlatform.PlatformVelocity
+            : Vector2.zero;
+    }
+
 }

@@ -18,16 +18,14 @@ public class FloatingPlatform : MonoBehaviour
     [SerializeField] private float speedFactorSmoothTime = 0.25f;
 
     [Header("Easing (non-constant speed)")]
-    [Tooltip("Maps 0..1 to 0..1. EaseInOut gives smooth accel/decel.")]
     [SerializeField] private AnimationCurve ease = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+    public Vector2 PlatformVelocity { get; private set; }
 
     private Rigidbody2D rb;
 
-    // smoothed runtime factor
     private float _speedFactorCurrent;
     private float _speedFactorVel;
-
-    // phase accumulator (in "A->B seconds" units)
     private float _phase;
 
     private void Reset()
@@ -42,27 +40,32 @@ public class FloatingPlatform : MonoBehaviour
         _speedFactorCurrent = Mathf.Max(0f, speedFactor);
     }
 
+    private void OnDisable()
+    {
+        PlatformVelocity = Vector2.zero;
+    }
+
     private void FixedUpdate()
     {
         if (!pointA || !pointB || secondsA_to_B <= 0f) return;
 
-        // Smoothly change the factor (so designers can tweak it live without a jerk). [web:88]
         float target = Mathf.Max(0f, speedFactor);
         _speedFactorCurrent = Mathf.SmoothDamp(
             _speedFactorCurrent, target, ref _speedFactorVel, speedFactorSmoothTime, Mathf.Infinity, Time.fixedDeltaTime
-        ); // SmoothDamp uses a spring-damper style smoothing. [web:88]
+        ); // SmoothDamp smoothing [web:88]
 
-        // Advance phase; speedFactor=1 means A->B takes secondsAtoB.
         _phase += Time.fixedDeltaTime * (_speedFactorCurrent / secondsA_to_B);
 
-        // Loop A<->B using PingPong in [0..1]. [page:0]
-        float ping = Mathf.PingPong(_phase, 1f); // 0..1..0..1...
-        float t = ease.Evaluate(ping);           // ease to make speed non-constant (floaty)
+        float ping = Mathf.PingPong(_phase, 1f);
+        float t = ease.Evaluate(ping);
 
-        Vector2 pos = Vector2.Lerp(pointA.position, pointB.position, t);
-        rb.MovePosition(pos); // Call from FixedUpdate for physics movement. [page:1]
+        Vector2 current = rb.position;
+        Vector2 next = Vector2.Lerp(pointA.position, pointB.position, t);
+
+        PlatformVelocity = (next - current) / Time.fixedDeltaTime;
+
+        rb.MovePosition(next); // Drive in FixedUpdate for physics movement. [web:73]
     }
 
-    // Optional: let gameplay code change it.
     public void SetSpeedFactor(float newFactor) => speedFactor = newFactor;
 }
