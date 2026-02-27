@@ -8,6 +8,15 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Mainmenu.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
+  - enabled: 1
+    path: Assets/Scenes/Level1Map.unity
+    guid: 23e695899e279a440a423f25088f9be1
+  - enabled: 1
+    path: Assets/Scenes/EndScreen.unity
+    guid: ca2ad3f1d173cfa40bd01cadd628d8be
+  - enabled: 1
+    path: Assets/Scenes/Victory.unity
+    guid: 4a3592eff7d230845b55770867fcbef9
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 104e227e242d1a84286ab2c353d10143, type: 3}
   m_UseUCBPForAssetBundles: 0
