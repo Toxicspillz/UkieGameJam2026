@@ -31,7 +31,7 @@ public class CharacterMovement : MonoBehaviour
     private Rigidbody2D m_RB;
     private PlayerControls m_ActionMap;
 
-    private bool m_IsGrounded;
+    [SerializeField] private bool m_IsGrounded;
     private bool m_JumpHeld;
     private float m_InMove;
     private float m_CoyoteTimeCounter;
