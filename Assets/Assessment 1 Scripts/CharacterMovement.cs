@@ -15,6 +15,13 @@ public class CharacterMovement : MonoBehaviour
     [SerializeField] private float m_JumpStrength = 9f;
     [SerializeField] private float m_Acceleration = 60f;
     [SerializeField] private float m_Deceleration = 80f;
+    
+    [Header("Speed Smoothing")]
+    [SerializeField] private float accelSmoothTime = 0.08f;   // smaller = quicker ramp up
+    [SerializeField] private float decelSmoothTime = 0.05f;   // smaller = quicker slow down
+    [SerializeField] private float maxSpeedChange = 50f;      // clamps how fast X can change (units/sec)
+
+    private float _xSmoothVel; // required by SmoothDamp 
 
     [Header("Apex / Gravity")]
     [SerializeField] private float m_AntiGravityThreshold = 0.15f;
@@ -74,7 +81,7 @@ public class CharacterMovement : MonoBehaviour
         m_LandingLockActive = true;
 
         yield return new WaitForFixedUpdate();
-        m_RB.linearVelocityX = 0f;
+        _xSmoothVel = 0f;
 
         yield return new WaitForSeconds(stickyFeetLockTime);
 
@@ -158,12 +165,13 @@ public class CharacterMovement : MonoBehaviour
     private void FixedUpdate()
     {
         RefreshPlatformVelocity();
+        ApplyHorizontalMovement(); // always run, so we can decelerate smoothly 
 
-        // If player is idle, keep them moving with the platform instead of freezing X to 0.
-        if (m_IsGrounded && Mathf.Approximately(m_InMove, 0f) && !m_LandingLockActive)
-        {
-            m_RB.linearVelocityX = m_PlatformVelocity.x;
-        }
+        // // If player is idle, keep them moving with the platform instead of freezing X to 0.
+        // if (m_IsGrounded && Mathf.Approximately(m_InMove, 0f) && !m_LandingLockActive)
+        // {
+        //     m_RB.linearVelocityX = m_PlatformVelocity.x;
+        // }
     }
 
     
@@ -316,33 +324,54 @@ public class CharacterMovement : MonoBehaviour
 
     private void ApplyHorizontalMovement()
     {
-        // Prevent walking off ledge while crouching
+        // // Prevent walking off ledge while crouching
+        // int ledgeCheck = IsOnLedge();
+        // if (m_IsGrounded && m_IsHoldingCrouch && ledgeCheck != 0)
+        // {
+        //     if ((ledgeCheck == 1 && m_InMove > 0) || (ledgeCheck == -1 && m_InMove < 0))
+        //     {
+        //         RefreshPlatformVelocity();
+        //         m_RB.linearVelocityX = m_PlatformVelocity.x;
+        //         return;
+        //     }
+        // }
+
+
+        RefreshPlatformVelocity(); 
+        // If landing lock is active, ignore input but still allow platform carry + smooth decel
+        float input = m_LandingLockActive ? 0f : m_InMove;
+
+        // Prevent walking off ledge while crouching (convert your early-return into "input = 0")
         int ledgeCheck = IsOnLedge();
         if (m_IsGrounded && m_IsHoldingCrouch && ledgeCheck != 0)
         {
-            if ((ledgeCheck == 1 && m_InMove > 0) || (ledgeCheck == -1 && m_InMove < 0))
-            {
-                RefreshPlatformVelocity();
-                m_RB.linearVelocityX = m_PlatformVelocity.x;
-                return;
-            }
+            if ((ledgeCheck == 1 && input > 0) || (ledgeCheck == -1 && input < 0))
+                input = 0f;
         }
 
         if (m_LandingLockActive)
             return; // Ignore horizontal input during sticky feet lock
+        
+        // Target speed (cap is m_MoveSpeed already)
+        float targetLocalX = input * m_MoveSpeed;
 
-        RefreshPlatformVelocity(); // from step 2B
+        // Add platform carry so standing still keeps relative position
+        float targetWorldX = targetLocalX + m_PlatformVelocity.x;
 
-        float targetSpeed = m_InMove * m_MoveSpeed;
+        // Choose accel vs decel smooth time
+        float st = Mathf.Abs(targetLocalX) > 0.01f ? accelSmoothTime : decelSmoothTime;
 
-        // Add platform carry so "idle" means idle relative to platform
-        float worldTargetX = targetSpeed + m_PlatformVelocity.x;
+        // Smoothly ease current X toward target X (no snapping) 
+        float newX = Mathf.SmoothDamp(
+            m_RB.linearVelocity.x,
+            targetWorldX,
+            ref _xSmoothVel,
+            st,
+            maxSpeedChange,
+            Time.fixedDeltaTime
+        );
 
-        // Use accel when input, decel when no input (optional but feels nicer)
-        float rate = Mathf.Approximately(m_InMove, 0f) ? m_Deceleration : m_Acceleration;
-
-        float newVelX = Mathf.MoveTowards(m_RB.linearVelocity.x, worldTargetX, rate * Time.fixedDeltaTime); // [web:95]
-        m_RB.linearVelocity = new Vector2(newVelX, m_RB.linearVelocity.y);
+        m_RB.linearVelocity = new Vector2(newX, m_RB.linearVelocity.y);
 
     }
 
