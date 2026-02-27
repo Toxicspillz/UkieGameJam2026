@@ -87,6 +87,7 @@ MonoBehaviour:
   accelSmoothTime: 0.12
   decelSmoothTime: 0.02
   maxSpeedChange: 55
+  walkDustDistance: 0.7
   m_AntiGravityThreshold: 0.15
   m_NormalGravity: 2.2
   m_ReducedGravity: 4

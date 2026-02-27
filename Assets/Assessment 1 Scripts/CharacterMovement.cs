@@ -22,6 +22,10 @@ public class CharacterMovement : MonoBehaviour
     [SerializeField] private float maxSpeedChange = 50f;      // clamps how fast X can change (units/sec)
 
     private float _xSmoothVel; // required by SmoothDamp 
+    
+    [Header("VFX/SFX")]
+    [SerializeField] private float walkDustDistance = 0.9f;
+    private Vector3 lastDustSpawnPos = Vector3.zero;
 
     [Header("Apex / Gravity")]
     [SerializeField] private float m_AntiGravityThreshold = 0.15f;
@@ -83,6 +87,16 @@ public class CharacterMovement : MonoBehaviour
         yield return new WaitForFixedUpdate();
         _xSmoothVel = 0f;
 
+        // // Landing Sfx
+        // if (!SfxManager.Instance.IsSfxPlaying("Landing1")) {
+        //     SfxManager.Instance.PlaySfx("Landing1");
+        // }
+        
+        // Landing Dust Vfx
+        Vector3 dustPos = transform.position + new Vector3(0, 0.5f, 0);
+        float shockScale = Mathf.Clamp(Mathf.Abs(m_RB.linearVelocity.y) * 0.04f, 1f, 2f);
+        VfxManager.Instance.PlayVFX("LandDust", dustPos, Quaternion.identity, shockScale);
+        
         yield return new WaitForSeconds(stickyFeetLockTime);
 
         m_LandingLockActive = false;
@@ -319,6 +333,13 @@ public class CharacterMovement : MonoBehaviour
         m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Impulse);
         m_CoyoteTimeCounter = 0;
 
+        // Jump Dust Vfx
+        Vector3 dustPos = transform.position + new Vector3(0, 0.5f, 0);
+        VfxManager.Instance.PlayVFX("JumpDust", dustPos, Quaternion.identity, 1f);
+                
+        // 1st Jump Sfx
+        //SfxManager.Instance.PlaySfx("Jump1");
+        
         OnJumpStarted?.Invoke();
     }
 
@@ -372,6 +393,9 @@ public class CharacterMovement : MonoBehaviour
         );
 
         m_RB.linearVelocity = new Vector2(newX, m_RB.linearVelocity.y);
+
+        // VFX dust spawning
+        TrySpawnRunDust();
 
     }
 
@@ -451,4 +475,20 @@ public class CharacterMovement : MonoBehaviour
             : Vector2.zero;
     }
 
+    
+    // -- VFX & SFX Helpers --
+    private void TrySpawnRunDust()
+    {
+        if (!m_IsGrounded || Mathf.Abs(m_InMove) == 0f) return;
+
+        float curDistance = walkDustDistance;
+        float dist = Vector3.Distance(transform.position, lastDustSpawnPos);
+
+        if (dist >= curDistance)
+        {
+            Vector3 dustPos = transform.position + new Vector3(0, 0.55f, 0); // tweak offset
+            VfxManager.Instance.PlayVFX("RunDust", dustPos, Quaternion.identity, 1f);
+            lastDustSpawnPos = transform.position;
+        }
+    }
 }
